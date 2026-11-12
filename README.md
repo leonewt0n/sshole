@@ -9,6 +9,7 @@ Install masscan and run
 uv run final.py
 ```
 
+# Turn Reasoning Off and add Speculative decoder for 2.5x tok/s
 ```
 llama-cli \
   -m OrcaSAQ-2-27B-Uncensored.gguf \
