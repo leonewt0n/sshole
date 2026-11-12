@@ -34,7 +34,7 @@ def try_login(ip):
         client.close()
 
 def main():
-    #masscan()
+    masscan()
     with open(SCAN_FILE) as f:
         content = f.read()
     
